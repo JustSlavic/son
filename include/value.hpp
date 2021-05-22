@@ -49,7 +49,9 @@ public:
     son(type_t t) noexcept; // Default value of that type.
     son(boolean_t v) noexcept;
     son(integer_t v) noexcept;
+    son(int32_t v) noexcept : son(static_cast<integer_t>(v)) {}
     son(floating_t v) noexcept;
+    son(const char* s) noexcept;
     son(std::initializer_list<son>) noexcept;
 
     son(const son& other) noexcept;
@@ -74,6 +76,7 @@ public:
     bool get_boolean() const { assert(is_boolean()); return m_value.boolean; }
     integer_t get_integer() const { assert(is_integer()); return m_value.integer; }
     floating_t get_floating() const { assert(is_floating()); return m_value.floating; }
+    string_t get_string() const { assert(is_string()); return *(string_t*)m_value.storage; }
 
     bool operator==(const son& other);
     bool operator!=(const son& other) { return !(*this == other); }
@@ -90,6 +93,27 @@ public:
     size_t empty() const;
     size_t size() const;
     size_t clear() const;
+
+    class iterator {
+        friend class son;
+
+        son* p = nullptr;
+        size_t idx = 0;
+
+        iterator(son* p) : p(p) {}
+        void set_to_end();
+
+    public:
+        void operator ++ () { ++idx; }
+        void operator -- () { --idx; }
+        bool operator == (const iterator& other) const { return p == other.p && idx == other.idx; }
+        bool operator != (const iterator& other) const { return !(*this == other); }
+
+        son& operator * ();
+    };
+
+    iterator begin() { return iterator(this); }
+    iterator end() { auto it = iterator(this); it.set_to_end(); return it; }
 
     const char* type_name() const noexcept {
         switch (m_type) {

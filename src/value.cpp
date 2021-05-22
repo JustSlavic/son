@@ -67,6 +67,12 @@ son::son(floating_t v) noexcept {
 }
 
 
+son::son(const char* s) noexcept {
+    m_type = type_t::string;
+    m_value.storage = new string_t(s);
+}
+
+
 son::son(std::initializer_list<son>) noexcept {
     // @todo
 }
@@ -127,5 +133,62 @@ void son::swap(son& other) noexcept {
     std::swap(m_type, other.m_type);
     std::swap(m_value, other.m_value);
 }
+
+
+void son::push(const char* key, const son& value) {
+    assert(is_null() || is_object());
+
+    if (is_null()) {
+        son obj(type_t::object);
+        this->swap(obj);
+    }
+
+    object_t* p_storage = (object_t*)m_value.storage;
+    p_storage->emplace_back(key, value);
+}
+
+
+void son::push(const son& value) {
+    assert(is_null() || is_array());
+}
+
+
+son& son::iterator::operator * () {
+    switch (p->m_type) {
+        case type_t::object: {
+            object_t* p_storage = (object_t*)p->m_value.storage;
+            return (*p_storage)[idx].second;
+        }
+        case type_t::array: {
+            array_t* p_storage = (array_t*)p->m_value.storage;
+            return (*p_storage)[idx];
+        }
+        default: return *p;
+    }
+}
+
+
+void son::iterator::set_to_end() {
+    switch (p->m_type) {
+        case type_t::null:
+        case type_t::boolean: 
+        case type_t::integer: 
+        case type_t::floating:
+        case type_t::string:
+            idx = 1;
+            break;
+        case type_t::object: {
+            object_t* p_storage = (object_t*) p->m_value.storage;
+            idx = p_storage->size();
+            break;
+        }
+        case type_t::array: {
+            array_t* p_storage = (array_t*) p->m_value.storage;
+            idx = p_storage->size();
+            break;
+        }
+    }
+}
+
 
 } // jslavic
