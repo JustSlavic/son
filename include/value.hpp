@@ -104,8 +104,12 @@ public:
         void set_to_end();
 
     public:
-        void operator ++ () { ++idx; }
-        void operator -- () { --idx; }
+        iterator& operator ++ () { ++idx; return *this; }
+        iterator  operator ++ (int) { iterator old = *this; operator++(); return old; }
+
+        iterator& operator -- () { --idx; return *this; }
+        iterator  operator -- (int) { iterator old = *this; operator--(); return old; }
+        
         bool operator == (const iterator& other) const { return p == other.p && idx == other.idx; }
         bool operator != (const iterator& other) const { return !(*this == other); }
 
