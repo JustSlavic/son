@@ -1,0 +1,7 @@
+{
+    name = "John Doe"
+    organization = "Big Evil Corporation Inc."
+    age = 38
+    married = false
+    siblings = []
+}

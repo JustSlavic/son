@@ -26,15 +26,16 @@ else ifeq ($(MAKECMDGOALS),release)
 	SUB_DIR  := release
 	CXX_FLAGS += -O2 -DRELEASE
 else ifeq ($(MAKECMDGOALS),examples)
-	SUB_DIR  := release
-	CXX_FLAGS += -O2 -DRELEASE
+	SUB_DIR  := debug
+	CXX_FLAGS += -ggdb3 -DDEBUG
 else
 	SUB_DIR  := plain
 endif
 
 
 SOURCES = \
-	value
+	value \
+	parser \
 
 
 OBJECTS := $(addprefix build/$(SUB_DIR)/, $(addsuffix .o,   $(SOURCES)))
