@@ -7,6 +7,20 @@ const char* bool_to_cstr(bool b) {
 }
 
 
+void print_object(jslavic::son& value) {
+    printf("{\n");
+    for (auto [k, v] : value.pairs()) {
+        printf("  %s = ", k.c_str());
+        if (v.is_null()) { printf("null;\n"); }
+        if (v.is_boolean()) { printf("%s;\n", bool_to_cstr(v.get_boolean())); }
+        if (v.is_integer()) { printf("%lld;\n", v.get_integer()); }
+        if (v.is_floating()) { printf("%lf;\n", v.get_floating()); }
+        if (v.is_string()) { printf("%s;\n", v.get_string().c_str()); }
+    }
+    printf("}\n");
+}
+
+
 int main() {
     using namespace jslavic;
 
@@ -36,16 +50,13 @@ int main() {
     object_value.push("this_is_bool", son(false));
     object_value.push("this_is_int", son(43));
 
-    printf("{\n");
-    for (son& v : object_value) {
-        printf("  '?' = ");
-        if (v.is_null()) { printf("null;\n"); }
-        if (v.is_boolean()) { printf("%s;\n", bool_to_cstr(v.get_boolean())); }
-        if (v.is_integer()) { printf("%ld;\n", v.get_integer()); }
-        if (v.is_floating()) { printf("%lf;\n", v.get_floating()); }
-        if (v.is_string()) { printf("%s;\n", v.get_string().c_str()); }
-    }
-    printf("}\n");
+    print_object(object_value);
+
+    object_value["this_is_null"] = son("DOGE!!!");
+    object_value["THIS IS NEW"] = son("new string");
+    object_value["this_is_int"].clear();
+
+    print_object(object_value);
 
     printf("Finish testing.\n");
     return 0;

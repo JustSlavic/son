@@ -135,6 +135,35 @@ void son::swap(son& other) noexcept {
 }
 
 
+son& son::operator[](const char* key) {
+    assert(is_null() || is_object());
+
+    if (is_null()) {
+        push(key, son());
+    }
+
+    object_t* p_storage = (object_t*)m_value.storage;
+
+    for (auto& pair : (*p_storage)) {
+        if (pair.first == std::string(key)) {
+            return pair.second;
+        }
+    }
+
+    push(key, son());
+
+    return (*p_storage)[p_storage->size() - 1].second;
+}
+
+
+son& son::operator[](int32_t idx) {
+    assert(is_array());
+
+    array_t* p_storage = (array_t*)m_value.storage;
+    return (*p_storage)[idx];
+}
+
+
 void son::push(const char* key, const son& value) {
     assert(is_null() || is_object());
 
@@ -150,6 +179,68 @@ void son::push(const char* key, const son& value) {
 
 void son::push(const son& value) {
     assert(is_null() || is_array());
+}
+
+
+bool son::empty() const {
+    switch (type()) {
+    case type_t::null: return true;
+    case type_t::boolean:
+    case type_t::integer:
+    case type_t::floating:
+    case type_t::string:
+        return false;
+    case type_t::object: {
+        object_t* p_storage = (object_t*)m_value.storage;
+        return p_storage->empty();
+    }
+    case type_t::array: {
+        array_t* p_storage = (array_t*)m_value.storage;
+        return p_storage->empty();
+    }
+    }
+}
+
+
+size_t son::size() const {
+    switch (type()) {
+    case type_t::null: return 0;
+    case type_t::boolean:
+    case type_t::integer:
+    case type_t::floating:
+    case type_t::string:
+        return 1;
+    case type_t::object: {
+        object_t* p_storage = (object_t*)m_value.storage;
+        return p_storage->size();
+    }
+    case type_t::array: {
+        array_t* p_storage = (array_t*)m_value.storage;
+        return p_storage->size();
+    }
+    }
+}
+
+
+void son::clear() {
+    switch (type()) {
+    case type_t::null: return;
+    case type_t::boolean: m_value.boolean = false; return;
+    case type_t::integer: m_value.integer = 0; return;
+    case type_t::floating: m_value.floating = 0.0; return;
+    case type_t::string: {
+        string_t* p_storage = (string_t*)m_value.storage;
+        return p_storage->clear();
+    }
+    case type_t::object: {
+        object_t* p_storage = (object_t*)m_value.storage;
+        return p_storage->clear();
+    }
+    case type_t::array: {
+        array_t* p_storage = (array_t*)m_value.storage;
+        return p_storage->clear();
+    }
+    }
 }
 
 

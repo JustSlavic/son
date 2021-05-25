@@ -78,8 +78,8 @@ public:
     floating_t get_floating() const { assert(is_floating()); return m_value.floating; }
     string_t get_string() const { assert(is_string()); return *(string_t*)m_value.storage; }
 
-    bool operator==(const son& other);
-    bool operator!=(const son& other) { return !(*this == other); }
+    bool operator==(const son& other) const;
+    bool operator!=(const son& other) const { return !(*this == other); }
 
     son& operator[](const char* key);
     son& operator[](int32_t idx);
@@ -90,13 +90,22 @@ public:
     void push(const char* key, const son& value);
     void push(const son& value);
 
-    size_t empty() const;
+    bool empty() const;
     size_t size() const;
-    size_t clear() const;
+    void clear();
 
-    class iterator {
-        friend class son;
+    template <typename Iterator>
+    struct iterator_proxy {
+        son* p = nullptr;
 
+        iterator_proxy(son* p) : p(p) {}
+
+    public:
+        Iterator begin() { return Iterator(p); }
+        Iterator end() { auto it = Iterator(p); it.set_to_end(); return it; }
+    };
+
+    struct iterator {
         son* p = nullptr;
         size_t idx = 0;
 
@@ -109,15 +118,50 @@ public:
 
         iterator& operator -- () { --idx; return *this; }
         iterator  operator -- (int) { iterator old = *this; operator--(); return old; }
-        
+
         bool operator == (const iterator& other) const { return p == other.p && idx == other.idx; }
         bool operator != (const iterator& other) const { return !(*this == other); }
 
         son& operator * ();
     };
 
+    template <typename Iterator>
+    struct object_iterator {
+        Iterator it;
+
+        object_iterator(son* p) : it(p) {}
+        void set_to_end() { it.set_to_end(); }
+
+    public:
+        object_iterator& operator ++ () { ++it; return *this; }
+        object_iterator  operator ++ (int) { object_iterator old = *this; operator++(); return old; }
+
+        object_iterator& operator -- () { --it; return *this; }
+        object_iterator  operator -- (int) { object_iterator old = *this; operator--(); return old; }
+
+        bool operator == (const object_iterator& other) const { return it == other.it; }
+        bool operator != (const object_iterator& other) const { return !(*this == other); }
+
+        std::pair<std::string, son&> operator * () {
+            assert(it.p->is_object());
+
+            object_t* storage = (object_t*)it.p->m_value.storage;
+            return { (*storage)[it.idx].first, (*storage)[it.idx].second };
+        }
+
+        std::string& key() const {
+            assert(it.p->is_object());
+
+            object_t* storage = (object_t*)it.p->m_value.storage;
+            return storage[it.idx].first;
+        }
+        son& value() const { return *it; }
+    };
+
     iterator begin() { return iterator(this); }
     iterator end() { auto it = iterator(this); it.set_to_end(); return it; }
+
+    iterator_proxy<object_iterator<iterator>> pairs() { return iterator_proxy<object_iterator<iterator>>(this); }
 
     const char* type_name() const noexcept {
         switch (m_type) {
@@ -129,7 +173,7 @@ public:
             case type_t::object: return "object";
             case type_t::array: return "array";
             // case type_t::custom: return "custom";
-        } 
+        }
     }
 };
 
