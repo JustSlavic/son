@@ -36,42 +36,20 @@ int main() {
     object_value.push("this_is_bool", false);
     object_value.push("this_is_int", 43);
 
-    print_options poptions;
-    poptions.print_semicolons = true;
-    poptions.print_commas = true;
-
-    pretty_print(object_value, poptions);
-    printf("\n");
-
-    object_value["this_is_null"] = "DOGE!!!";
-    object_value["THIS IS NEW"] = "new string";
-    object_value["this_is_int"].clear();
-
-    pretty_print(object_value, poptions);
-    printf("\n");
-
     son copy_obj = object_value;
 
     printf("copy == original: %s\n", bool_to_cstr(copy_obj == object_value));
+    
+    son small_obj = { {"a" , 1}, {"b", 2}, {"c", 3} };
+    son array_value = { 17, 21, true, small_obj, small_obj, "doge" };
 
-    object_value["copy of itself"] = copy_obj;
-    pretty_print(object_value, poptions);
-    printf("\n");
+    object_value["array"] = array_value;
+    object_value["copy of itself"] = object_value;
 
-    son small_obj;
-    small_obj["a"] = 1;
-    small_obj["b"] = 2;
-    small_obj["c"] = 3;
-    // small_obj["d"] = 4;
-
-    son array_value;
-    array_value.push(17);
-    array_value.push(21);
-    array_value.push(true);
-    array_value.push(small_obj);
-    array_value.push("doge");
-
-    pretty_print(array_value, poptions);
+    print_options options;
+    options.print_semicolons = true;
+    options.print_commas = true;
+    pretty_print(object_value, options);
     printf("\n");
 
     printf("Finish testing.\n");

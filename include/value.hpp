@@ -83,10 +83,13 @@ public:
     son& operator[](const char* key);
     son& operator[](int32_t idx);
 
+    const son& operator[](const char* key) const;
+    const son& operator[](int32_t idx) const;
+
     son get(const char* key, const son& default_value);
     son get(int32_t idx, const son& default_value);
 
-    void push(const char* key, const son& value);
+    void push(const std::string& key, const son& value);
     void push(const son& value);
 
     bool empty() const;
