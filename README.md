@@ -103,6 +103,13 @@ You can pretty-print values by calling `pretty_print()` function.
     son value = { { "doge", "wow" }, { "weight", 30 } };
     pretty_print(value);
 
+Will produce:
+
+    {
+        doge = "wow"
+        weight = 30
+    }
+
 You can pass settings object to the function, to change output stream, or the way object will look.
 
     FILE* file = fopen("output.son", "w");
