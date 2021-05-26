@@ -85,8 +85,7 @@ son::son(std::initializer_list<son> init_list) noexcept
         for (auto& v : init_list) {
             push(v[0].get_string(), v[1]);
         }
-    }
-    else {
+    } else {
         for (auto& v : init_list) {
             push(v);
         }
