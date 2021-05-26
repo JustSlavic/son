@@ -11,6 +11,7 @@
 namespace jslavic {
 
 class son {
+public:
     enum class type_t : uint8_t {
         null,
         boolean,
@@ -29,6 +30,7 @@ class son {
     using object_t = std::vector<std::pair<std::string, son>>;
     using array_t = std::vector<son>;
 
+private:
     union value_t {
         boolean_t boolean;
         integer_t integer;
@@ -173,6 +175,24 @@ public:
         }
     }
 };
+
+
+struct print_options {
+    enum class multiline_t {
+        disabled,
+        enabled,
+        smart,
+    };
+    
+    FILE* output = stdout;
+    bool print_semicolons = false;
+    bool print_commas = false;
+    int32_t indent = 2;
+    multiline_t multiline = multiline_t::smart;
+};
+
+
+int32_t pretty_print(const son& value, const print_options& options = print_options());
 
 
 } // jslavic

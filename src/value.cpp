@@ -235,6 +235,14 @@ void son::push(const char* key, const son& value) {
 
 void son::push(const son& value) {
     assert(is_null() || is_array());
+
+    if (is_null()) {
+        son arr(type_t::array);
+        this->swap(arr);
+    }
+
+    array_t* p_storage = (array_t*)m_value.storage;
+    p_storage->push_back(value);
 }
 
 
@@ -335,6 +343,63 @@ void son::iterator::set_to_end() {
             break;
         }
     }
+}
+
+
+static const char* spaces = "                                                  ";
+int32_t pretty_print_impl(son& value, const print_options& options, int32_t depth) {
+    switch (value.type()) {
+    case son::type_t::null: fprintf(options.output, "null"); break;
+    case son::type_t::boolean: fprintf(options.output, "%s", value.get_boolean() ? "true" : "false"); break;
+    case son::type_t::integer: fprintf(options.output, "%lld", value.get_integer()); break;
+    case son::type_t::floating: fprintf(options.output, "%lf", value.get_floating()); break;
+    case son::type_t::string: fprintf(options.output, "%s", value.get_string().c_str()); break;
+    case son::type_t::object: {
+        bool in_one_line = options.multiline == print_options::multiline_t::smart && value.size() <= 3
+            || options.multiline == print_options::multiline_t::disabled;
+
+        fprintf(options.output, "{%s", in_one_line ? " " : "\n");
+        depth += 1;
+
+        for (auto [k, v] : value.pairs()) {
+            if (!in_one_line) { fprintf(options.output, "%.*s", options.indent * depth, spaces); }
+            fprintf(options.output, "%s = ", k.c_str());
+
+            pretty_print_impl(v, options, depth);
+
+            fprintf(options.output, "%s%s",
+                options.print_semicolons ? ";" : "",
+                in_one_line ? " " : "\n"
+            );
+        }
+
+        depth -= 1;
+        fprintf(options.output, "%.*s}", options.indent * depth, spaces);
+        break;
+    }
+    case son::type_t::array: {
+        fprintf(options.output, "[\n");
+        depth += 1;
+
+        for (auto& v : value) {
+            fprintf(options.output, "%.*s", options.indent * depth, spaces);
+            pretty_print_impl(v, options, depth);
+            fprintf(options.output, "%s\n", options.print_commas ? "," : "");
+        }
+
+        depth -= 1;
+        fprintf(options.output, "%.*s]", options.indent * depth, spaces);
+        break;
+    }
+    }
+
+    return 0;
+}
+
+
+int32_t pretty_print(const son& value, const print_options& options /* = print_options()*/) {
+    if (options.output == nullptr) { return -1; }
+    return pretty_print_impl(const_cast<son&>(value), options, 0);
 }
 
 

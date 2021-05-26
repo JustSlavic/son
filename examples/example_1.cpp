@@ -7,25 +7,6 @@ const char* bool_to_cstr(bool b) {
 }
 
 
-const char* spaces = "                                                  ";
-
-void print_object(jslavic::son& value, int depth = 0) {
-    printf("%.*s{\n", depth * 2, spaces);
-    depth += 1;
-    for (auto [k, v] : value.pairs()) {
-        printf("%.*s%s = ", depth * 2, spaces, k.c_str());
-        if (v.is_null()) { printf("null;\n"); }
-        if (v.is_boolean()) { printf("%s;\n", bool_to_cstr(v.get_boolean())); }
-        if (v.is_integer()) { printf("%lld;\n", v.get_integer()); }
-        if (v.is_floating()) { printf("%lf;\n", v.get_floating()); }
-        if (v.is_string()) { printf("%s;\n", v.get_string().c_str()); }
-        if (v.is_object()) { print_object(v, depth); }
-    }
-    depth -= 1;
-    printf("%.*s}\n", depth * 2, spaces);
-}
-
-
 int main() {
     using namespace jslavic;
 
@@ -51,24 +32,41 @@ int main() {
     printf("string_value.get_string() == %s\n\n", string_value.get_string().c_str());
 
     son object_value;
-    object_value.push("this_is_null", son());
-    object_value.push("this_is_bool", son(false));
-    object_value.push("this_is_int", son(43));
+    object_value.push("this_is_null", nullptr);
+    object_value.push("this_is_bool", false);
+    object_value.push("this_is_int", 43);
 
-    print_object(object_value);
+    print_options poptions;
+    poptions.print_semicolons = true;
+    poptions.print_commas = true;
 
-    object_value["this_is_null"] = son("DOGE!!!");
-    object_value["THIS IS NEW"] = son("new string");
+    pretty_print(object_value, poptions);
+    printf("\n");
+
+    object_value["this_is_null"] = "DOGE!!!";
+    object_value["THIS IS NEW"] = "new string";
     object_value["this_is_int"].clear();
 
-    print_object(object_value);
+    pretty_print(object_value, poptions);
+    printf("\n");
 
     son copy_obj = object_value;
 
     printf("copy == original: %s\n", bool_to_cstr(copy_obj == object_value));
 
     object_value["copy of itself"] = copy_obj;
-    print_object(object_value);
+    pretty_print(object_value, poptions);
+    printf("\n");
+
+    son array_value;
+    array_value.push(17);
+    array_value.push(21);
+    array_value.push(true);
+    array_value.push(nullptr);
+    array_value.push("doge");
+
+    pretty_print(array_value, poptions);
+    printf("\n");
 
     printf("Finish testing.\n");
     return 0;
