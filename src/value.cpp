@@ -7,8 +7,8 @@ namespace jslavic {
 son::~son() {
     switch (m_type) {
         case type_t::null:
-        case type_t::boolean: 
-        case type_t::integer: 
+        case type_t::boolean:
+        case type_t::integer:
         case type_t::floating:
             break;
         case type_t::string: delete (string_t*)m_value.storage; break;
@@ -37,8 +37,8 @@ son::son(type_t t) noexcept
     m_type = t;
     switch (t) {
         case type_t::null:
-        case type_t::boolean: 
-        case type_t::integer: 
+        case type_t::boolean:
+        case type_t::integer:
         case type_t::floating:
             break;
         case type_t::string: m_value.storage = new string_t(); break;
@@ -135,6 +135,36 @@ void son::swap(son& other) noexcept {
 }
 
 
+bool son::operator==(const son& other) const {
+    if (type() != other.type()) return false;
+
+    switch (type()) {
+    case type_t::null: return true;
+    case type_t::boolean: return get_boolean() == other.get_boolean();
+    case type_t::integer: return get_integer() == other.get_integer();
+    case type_t::floating: return get_floating() == other.get_floating();
+    case type_t::string: {
+        string_t* p_storage = (string_t*)m_value.storage;
+        string_t* p_other_storage = (string_t*)other.m_value.storage;
+
+        return (*p_storage) == (*p_other_storage);
+    }
+    case type_t::object: {
+        object_t* p_storage = (object_t*)m_value.storage;
+        object_t* p_other_storage = (object_t*)other.m_value.storage;
+
+        return (*p_storage) == (*p_other_storage);
+    }
+    case type_t::array: {
+        array_t* p_storage = (array_t*)m_value.storage;
+        array_t* p_other_storage = (array_t*)other.m_value.storage;
+
+        return (*p_storage) == (*p_other_storage);
+    }
+    }
+}
+
+
 son& son::operator[](const char* key) {
     assert(is_null() || is_object());
 
@@ -161,6 +191,32 @@ son& son::operator[](int32_t idx) {
 
     array_t* p_storage = (array_t*)m_value.storage;
     return (*p_storage)[idx];
+}
+
+
+son son::get(const char* key, const son& default_value) {
+    assert(is_object());
+    object_t* p_storage = (object_t*)m_value.storage;
+
+    for (auto& pair : (*p_storage)) {
+        if (pair.first == std::string(key)) {
+            return pair.second;
+        }
+    }
+
+    return default_value;
+}
+
+
+son son::get(int32_t idx, const son& default_value) {
+    assert(is_array());
+    array_t* p_storage = (array_t*)m_value.storage;
+
+    if (idx < p_storage->size()) {
+        return (*p_storage)[idx];
+    }
+
+    return default_value;
 }
 
 
@@ -262,8 +318,8 @@ son& son::iterator::operator * () {
 void son::iterator::set_to_end() {
     switch (p->m_type) {
         case type_t::null:
-        case type_t::boolean: 
-        case type_t::integer: 
+        case type_t::boolean:
+        case type_t::integer:
         case type_t::floating:
         case type_t::string:
             idx = 1;

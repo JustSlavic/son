@@ -39,9 +39,6 @@ class son {
     type_t m_type = type_t::null;
 
 public:
-    template <type_t TYPE>
-    static son create() = delete;
-
     ~son();
 
     son(); // null.
@@ -176,16 +173,6 @@ public:
         }
     }
 };
-
-
-template <> son son::create<son::type_t::null>();
-template <> son son::create<son::type_t::boolean>();
-template <> son son::create<son::type_t::integer>();
-template <> son son::create<son::type_t::floating>();
-template <> son son::create<son::type_t::string>();
-template <> son son::create<son::type_t::object>();
-template <> son son::create<son::type_t::array>();
-
 
 
 } // jslavic

@@ -7,17 +7,22 @@ const char* bool_to_cstr(bool b) {
 }
 
 
-void print_object(jslavic::son& value) {
-    printf("{\n");
+const char* spaces = "                                                  ";
+
+void print_object(jslavic::son& value, int depth = 0) {
+    printf("%.*s{\n", depth * 2, spaces);
+    depth += 1;
     for (auto [k, v] : value.pairs()) {
-        printf("  %s = ", k.c_str());
+        printf("%.*s%s = ", depth * 2, spaces, k.c_str());
         if (v.is_null()) { printf("null;\n"); }
         if (v.is_boolean()) { printf("%s;\n", bool_to_cstr(v.get_boolean())); }
         if (v.is_integer()) { printf("%lld;\n", v.get_integer()); }
         if (v.is_floating()) { printf("%lf;\n", v.get_floating()); }
         if (v.is_string()) { printf("%s;\n", v.get_string().c_str()); }
+        if (v.is_object()) { print_object(v, depth); }
     }
-    printf("}\n");
+    depth -= 1;
+    printf("%.*s}\n", depth * 2, spaces);
 }
 
 
@@ -35,7 +40,7 @@ int main() {
 
     son integer_value(42);
     printf("integer_value.is_integer() == %s\n", bool_to_cstr(integer_value.is_integer()));
-    printf("integer_value.get_integer() == %ld\n\n", integer_value.get_integer());
+    printf("integer_value.get_integer() == %lld\n\n", integer_value.get_integer());
 
     son floating_value(103.4);
     printf("floating_value.is_floating() == %s\n", bool_to_cstr(floating_value.is_floating()));
@@ -56,6 +61,13 @@ int main() {
     object_value["THIS IS NEW"] = son("new string");
     object_value["this_is_int"].clear();
 
+    print_object(object_value);
+
+    son copy_obj = object_value;
+
+    printf("copy == original: %s\n", bool_to_cstr(copy_obj == object_value));
+
+    object_value["copy of itself"] = copy_obj;
     print_object(object_value);
 
     printf("Finish testing.\n");
