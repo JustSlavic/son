@@ -100,4 +100,21 @@ or you can use C++17 syntax:
 
 You can pretty-print values by calling `pretty_print()` function.
 
+    son value = { { "doge", "wow" }, { "weight", 30 } };
+    pretty_print(value);
 
+You can pass settings object to the function, to change output stream, or the way object will look.
+
+    FILE* file = fopen("output.son", "w");
+
+    print_options options;
+    options.output = file;
+    options.print_semicolons = true;
+    options.print_commas = true;
+    options.indent = 4;
+    options.multiline = print_options::multiline_t::enabled;
+
+There are three options for multiline:
+1. enabled - all objects and arrays will have each entry on the next line.
+2. disabled - no entries of objects and arrays will be printed on the next line.
+3. smart - objects with 3 key-value pairs will be printed on the single line, and more complex objects will be multilined.
