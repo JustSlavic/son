@@ -286,6 +286,35 @@ size_t son::size() const {
 }
 
 
+size_t son::deep_size() const {
+    switch (type()) {
+    case type_t::null:
+    case type_t::boolean:
+    case type_t::integer:
+    case type_t::floating:
+    case type_t::string:
+        return 1;
+    case type_t::object: {
+        size_t n = 0;
+        object_t* p_storage = (object_t*)m_value.storage;
+        for (auto& [k, v] : (*p_storage)) {
+            n += 1; // for key
+            n += v.deep_size();
+        }
+        return n;
+    }
+    case type_t::array: {
+        size_t n = 0;
+        array_t* p_storage = (array_t*)m_value.storage;
+        for (auto& v : (*p_storage)) {
+            n += v.deep_size();
+        }
+        return n;
+    }
+    }
+}
+
+
 void son::clear() {
     switch (type()) {
     case type_t::null: return;
@@ -355,7 +384,7 @@ int32_t pretty_print_impl(son& value, const print_options& options, int32_t dept
     case son::type_t::floating: fprintf(options.output, "%lf", value.get_floating()); break;
     case son::type_t::string: fprintf(options.output, "%s", value.get_string().c_str()); break;
     case son::type_t::object: {
-        bool in_one_line = options.multiline == print_options::multiline_t::smart && value.size() <= 3
+        bool in_one_line = options.multiline == print_options::multiline_t::smart && value.deep_size() <= 6
             || options.multiline == print_options::multiline_t::disabled;
 
         fprintf(options.output, "{%s", in_one_line ? " " : "\n");
@@ -374,7 +403,7 @@ int32_t pretty_print_impl(son& value, const print_options& options, int32_t dept
         }
 
         depth -= 1;
-        fprintf(options.output, "%.*s}", options.indent * depth, spaces);
+        fprintf(options.output, "%.*s}", in_one_line ? 0 : options.indent * depth, spaces);
         break;
     }
     case son::type_t::array: {

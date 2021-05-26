@@ -91,6 +91,7 @@ public:
 
     bool empty() const;
     size_t size() const;
+    size_t deep_size() const;
     void clear();
 
     template <typename Iterator>

@@ -58,11 +58,17 @@ int main() {
     pretty_print(object_value, poptions);
     printf("\n");
 
+    son small_obj;
+    small_obj["a"] = 1;
+    small_obj["b"] = 2;
+    small_obj["c"] = 3;
+    // small_obj["d"] = 4;
+
     son array_value;
     array_value.push(17);
     array_value.push(21);
     array_value.push(true);
-    array_value.push(nullptr);
+    array_value.push(small_obj);
     array_value.push("doge");
 
     pretty_print(array_value, poptions);
