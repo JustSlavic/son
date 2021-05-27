@@ -21,7 +21,7 @@ int main() {
 
     son integer_value(42);
     printf("integer_value.is_integer() == %s\n", bool_to_cstr(integer_value.is_integer()));
-    printf("integer_value.get_integer() == %ld\n\n", integer_value.get_integer());
+    printf("integer_value.get_integer() == %lld\n\n", integer_value.get_integer());
 
     son floating_value(103.4);
     printf("floating_value.is_floating() == %s\n", bool_to_cstr(floating_value.is_floating()));
@@ -32,20 +32,25 @@ int main() {
     printf("string_value.get_string() == %s\n\n", string_value.get_string().c_str());
 
     son object_value;
-    object_value.push("this_is_null", son());
-    object_value.push("this_is_bool", son(false));
-    object_value.push("this_is_int", son(43));
+    object_value.push("this_is_null", nullptr);
+    object_value.push("this_is_bool", false);
+    object_value.push("this_is_int", 43);
 
-    printf("{\n");
-    for (son& v : object_value) {
-        printf("  '?' = ");
-        if (v.is_null()) { printf("null;\n"); }
-        if (v.is_boolean()) { printf("%s;\n", bool_to_cstr(v.get_boolean())); }
-        if (v.is_integer()) { printf("%ld;\n", v.get_integer()); }
-        if (v.is_floating()) { printf("%lf;\n", v.get_floating()); }
-        if (v.is_string()) { printf("%s;\n", v.get_string().c_str()); }
-    }
-    printf("}\n");
+    son copy_obj = object_value;
+
+    printf("copy == original: %s\n", bool_to_cstr(copy_obj == object_value));
+    
+    son small_obj = { {"a" , 1}, {"b", 2}, {"c", 3} };
+    son array_value = { 17, 21, true, small_obj, small_obj, "doge" };
+
+    object_value["array"] = array_value;
+    object_value["copy of itself"] = object_value;
+
+    print_options options;
+    options.print_semicolons = true;
+    options.print_commas = true;
+    pretty_print(object_value, options);
+    printf("\n");
 
     printf("Finish testing.\n");
     return 0;

@@ -11,6 +11,7 @@
 namespace jslavic {
 
 class son {
+public:
     enum class type_t : uint8_t {
         null,
         boolean,
@@ -29,6 +30,7 @@ class son {
     using object_t = std::vector<std::pair<std::string, son>>;
     using array_t = std::vector<son>;
 
+private:
     union value_t {
         boolean_t boolean;
         integer_t integer;
@@ -39,9 +41,6 @@ class son {
     type_t m_type = type_t::null;
 
 public:
-    template <type_t TYPE>
-    static son create() = delete;
-
     ~son();
 
     son(); // null.
@@ -78,25 +77,38 @@ public:
     floating_t get_floating() const { assert(is_floating()); return m_value.floating; }
     string_t get_string() const { assert(is_string()); return *(string_t*)m_value.storage; }
 
-    bool operator==(const son& other);
-    bool operator!=(const son& other) { return !(*this == other); }
+    bool operator==(const son& other) const;
+    bool operator!=(const son& other) const { return !(*this == other); }
 
     son& operator[](const char* key);
     son& operator[](int32_t idx);
 
+    const son& operator[](const char* key) const;
+    const son& operator[](int32_t idx) const;
+
     son get(const char* key, const son& default_value);
     son get(int32_t idx, const son& default_value);
 
-    void push(const char* key, const son& value);
+    void push(const std::string& key, const son& value);
     void push(const son& value);
 
-    size_t empty() const;
+    bool empty() const;
     size_t size() const;
-    size_t clear() const;
+    size_t deep_size() const;
+    void clear();
 
-    class iterator {
-        friend class son;
+    template <typename Iterator>
+    struct iterator_proxy {
+        son* p = nullptr;
 
+        iterator_proxy(son* p) : p(p) {}
+
+    public:
+        Iterator begin() { return Iterator(p); }
+        Iterator end() { auto it = Iterator(p); it.set_to_end(); return it; }
+    };
+
+    struct iterator {
         son* p = nullptr;
         size_t idx = 0;
 
@@ -109,15 +121,50 @@ public:
 
         iterator& operator -- () { --idx; return *this; }
         iterator  operator -- (int) { iterator old = *this; operator--(); return old; }
-        
+
         bool operator == (const iterator& other) const { return p == other.p && idx == other.idx; }
         bool operator != (const iterator& other) const { return !(*this == other); }
 
         son& operator * ();
     };
 
+    template <typename Iterator>
+    struct object_iterator {
+        Iterator it;
+
+        object_iterator(son* p) : it(p) {}
+        void set_to_end() { it.set_to_end(); }
+
+    public:
+        object_iterator& operator ++ () { ++it; return *this; }
+        object_iterator  operator ++ (int) { object_iterator old = *this; operator++(); return old; }
+
+        object_iterator& operator -- () { --it; return *this; }
+        object_iterator  operator -- (int) { object_iterator old = *this; operator--(); return old; }
+
+        bool operator == (const object_iterator& other) const { return it == other.it; }
+        bool operator != (const object_iterator& other) const { return !(*this == other); }
+
+        std::pair<std::string, son&> operator * () {
+            assert(it.p->is_object());
+
+            object_t* storage = (object_t*)it.p->m_value.storage;
+            return { (*storage)[it.idx].first, (*storage)[it.idx].second };
+        }
+
+        std::string& key() const {
+            assert(it.p->is_object());
+
+            object_t* storage = (object_t*)it.p->m_value.storage;
+            return storage[it.idx].first;
+        }
+        son& value() const { return *it; }
+    };
+
     iterator begin() { return iterator(this); }
     iterator end() { auto it = iterator(this); it.set_to_end(); return it; }
+
+    iterator_proxy<object_iterator<iterator>> pairs() { return iterator_proxy<object_iterator<iterator>>(this); }
 
     const char* type_name() const noexcept {
         switch (m_type) {
@@ -129,19 +176,27 @@ public:
             case type_t::object: return "object";
             case type_t::array: return "array";
             // case type_t::custom: return "custom";
-        } 
+        }
     }
 };
 
 
-template <> son son::create<son::type_t::null>();
-template <> son son::create<son::type_t::boolean>();
-template <> son son::create<son::type_t::integer>();
-template <> son son::create<son::type_t::floating>();
-template <> son son::create<son::type_t::string>();
-template <> son son::create<son::type_t::object>();
-template <> son son::create<son::type_t::array>();
+struct print_options {
+    enum class multiline_t {
+        disabled,
+        enabled,
+        smart,
+    };
+    
+    FILE* output = stdout;
+    bool print_semicolons = false;
+    bool print_commas = false;
+    int32_t indent = 2;
+    multiline_t multiline = multiline_t::smart;
+};
 
+
+int32_t pretty_print(const son& value, const print_options& options = print_options());
 
 
 } // jslavic
