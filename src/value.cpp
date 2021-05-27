@@ -67,9 +67,14 @@ son::son(floating_t v) noexcept {
 }
 
 
-son::son(const char* s) noexcept {
+son::son(const char* s) noexcept
+    : son(std::string(s))
+{}
+
+
+son::son(std::string s) noexcept {
     m_type = type_t::string;
-    m_value.storage = new string_t(s);
+    m_value.storage = new string_t(std::move(s));
 }
 
 

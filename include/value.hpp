@@ -24,7 +24,7 @@ public:
     };
 
     using boolean_t = bool;
-    using integer_t = uint64_t;
+    using integer_t = int64_t;
     using floating_t = double;
     using string_t = std::string;
     using object_t = std::vector<std::pair<std::string, son>>;
@@ -51,6 +51,7 @@ public:
     son(int32_t v) noexcept : son(static_cast<integer_t>(v)) {}
     son(floating_t v) noexcept;
     son(const char* s) noexcept;
+    son(std::string s) noexcept;
     son(std::initializer_list<son>) noexcept;
 
     son(const son& other) noexcept;

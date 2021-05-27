@@ -20,12 +20,17 @@ private:
     std::string filename;
 
 public:
-
     parser(const char* filename) : filename(filename) {}
     parser(std::string filename) : filename(std::move(filename)) {}
 
     son parse();
 };
+
+
+inline son parse(std::string filename) {
+    parser parser(std::move(filename));
+    return parser.parse();
+}
 
 
 } // jslavic

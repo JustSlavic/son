@@ -13,7 +13,10 @@ int main() {
     printf("Test parsing son object from example_2.son:\n\n");
 
     parser p("example_2.son");
-    son obj = p.parse();
+    son result = p.parse();
+
+    pretty_print(result);
+    printf("\n");
 
     printf("Finish testing.\n");
     return 0;

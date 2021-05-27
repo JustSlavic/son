@@ -38,6 +38,40 @@ enum kind_t {
     TOKEN_EOF,
 };
 
+static const char* to_debug_string(kind_t k) {
+    switch (k) {
+        case TOKEN_UNDEFINED:     return "TOKEN_UNDEFINED";
+
+        case TOKEN_EQUAL_SIGN:    return "TOKEN_EQUAL_SIGN";
+        case TOKEN_SEMICOLON:     return "TOKEN_SEMICOLON";
+        case TOKEN_COMMA:         return "TOKEN_COMMA";
+
+        case TOKEN_BRACE_OPEN:    return "TOKEN_BRACE_OPEN";
+        case TOKEN_BRACE_CLOSE:   return "TOKEN_BRACE_CLOSE";
+
+        case TOKEN_PAREN_OPEN:    return "TOKEN_PAREN_OPEN";
+        case TOKEN_PAREN_CLOSE:   return "TOKEN_PAREN_CLOSE";
+
+        case TOKEN_BRACKET_OPEN:  return "TOKEN_BRACKET_OPEN";
+        case TOKEN_BRACKET_CLOSE: return "TOKEN_BRACKET_CLOSE";
+
+        case TOKEN_KW_NULL:       return "TOKEN_KW_NULL";
+        case TOKEN_KW_TRUE:       return "TOKEN_KW_TRUE";
+        case TOKEN_KW_FALSE:      return "TOKEN_KW_FALSE";
+
+        case TOKEN_IDENTIFIER:    return "TOKEN_IDENTIFIER";
+        case TOKEN_INTEGER:       return "TOKEN_INTEGER";
+        case TOKEN_FLOATING:      return "TOKEN_FLOATING";
+        case TOKEN_STRING:        return "TOKEN_STRING";
+
+        case TOKEN_DOUBLE_SLASH:  return "TOKEN_DOUBLE_SLASH";
+
+        case TOKEN_EOF:           return "TOKEN_EOF";
+    }
+
+    return "ERROR";
+}
+
 
 static const char* to_string(kind_t k) {
     switch (k) {
@@ -103,7 +137,7 @@ struct token {
 
 
 void print_token(token t) {
-    printf("%lu:%lu token { kind = %20s; value = ", t.line_number, t.char_number, to_string(t.kind));
+    printf("%3llu:%2llu token { kind = %20s; value = ", t.line_number, t.char_number, to_debug_string(t.kind));
 
     switch (t.kind) {
         case TOKEN_UNDEFINED: printf("ERROR! }\n"); break;
@@ -111,14 +145,14 @@ void print_token(token t) {
         case TOKEN_KW_NULL:   printf("null; }\n"); break;
         case TOKEN_KW_TRUE:   printf("true; }\n"); break;
         case TOKEN_KW_FALSE:  printf("false; }\n"); break;
-        case TOKEN_INTEGER:   printf("%ld; }\n", t.value.integer); break;
+        case TOKEN_INTEGER:   printf("%lld; }\n", t.value.integer); break;
         case TOKEN_FLOATING:  printf("%lf; }\n", t.value.floating); break;
 
         case TOKEN_IDENTIFIER:
         case TOKEN_STRING:
             printf("%.*s; }\n", int(t.in_text.size), t.in_text.begin);
             break;
-        
+
         case TOKEN_EQUAL_SIGN:
         case TOKEN_SEMICOLON:
         case TOKEN_COMMA:
@@ -200,7 +234,7 @@ public:
         }
 
         c = get_char();
-        
+
         state.char_counter++;
         state.current_char++;
 
@@ -297,7 +331,6 @@ public:
                 t.in_text.size = 1;
                 t.line_number = state.line_counter;
                 t.char_number = state.char_counter;
-                // t.line = get_line();
                 t.kind = kind_t(c);
                 t.value.integer = 0;
 
@@ -334,7 +367,7 @@ public:
 
                 // auto line = get_line();
                 // printf("   %lu | %.*s\n", checkpoint.line_counter, (int)line.length, line.start);
-                // printf("   %.*s | %.*s%.*s\n", 
+                // printf("   %.*s | %.*s%.*s\n",
                 //     (int)(digits_in_number(checkpoint.line_counter)), spaces,
                 //     (int)(checkpoint.current - line.start), spaces,
                 //     (int)result.length, carets);
@@ -350,12 +383,10 @@ public:
             t.in_text.size = 1;
             t.line_number = state.line_counter;
             t.char_number = state.char_counter;
-            // t.line = get_line();
             t.kind = TOKEN_EOF;
             t.value.integer = 0;
 
             token_stream.push_back(t);
-            // bucket_push_token(storage, t);
             return true;
         }
 
@@ -375,7 +406,7 @@ public:
 
         eat_char(); // Skip double quote.
         length += 1;
-        
+
         while ((c = get_char()) != '"') {
             // Check for escape sequence.
             if (c == '\\') {
@@ -394,7 +425,7 @@ public:
 
                 // printf("%s:%lu:%lu: error: unclosed double quote\n", filename, checkpoint.line_counter, checkpoint.char_counter);
                 // printf("   %lu |%.*s\n", checkpoint.line_counter, (int)line.length, line.start);
-                // printf("   %.*s |%.*s%.*s\n", 
+                // printf("   %.*s |%.*s%.*s\n",
                 //     (int)(digits_in_number(checkpoint.line_counter)), spaces,
                 //     (int)(checkpoint.current - line.start), spaces,
                 //     (int)(line.length - (checkpoint.current - line.start)), carets);
@@ -414,19 +445,16 @@ public:
         t.in_text.size = length;
         t.line_number = checkpoint.line_counter;
         t.char_number = checkpoint.char_counter;
-        // t.line = get_line();
         t.kind = TOKEN_STRING;
         t.value.integer = 0;
 
         token_stream.push_back(t);
-        // bucket_push_token(storage, t);
-        // p->push_token(t);
         return true;
     }
 
     bool eat_keyword_or_identifier () {
         char c = get_char();
-        
+
         if (!is_valid_identifier_head(c)) {
             return false;
         }
@@ -443,7 +471,6 @@ public:
             t.in_text.size = result.size;
             t.line_number = state.line_counter;
             t.char_number = state.char_counter;
-            // t.line = get_line();
             t.kind = TOKEN_IDENTIFIER;
             t.value.integer = 0;
 
@@ -455,7 +482,6 @@ public:
         t.in_text = result;
         t.line_number = state.line_counter;
         t.char_number = state.char_counter;
-        // t.line = get_line();
         t.kind = token_kind->second;
         t.value.integer = 0;
 
@@ -508,7 +534,6 @@ public:
             t.in_text.size = len;
             t.line_number = state.line_counter;
             t.char_number = state.char_counter;
-            // t.line = get_line();
             t.kind = TOKEN_FLOATING;
             t.value.floating = sign*(integral + fractional);
 
@@ -521,7 +546,6 @@ public:
         t.in_text.size = len;
         t.line_number = state.line_counter;
         t.char_number = state.char_counter;
-        // t.line = get_line();
         t.kind = TOKEN_INTEGER;
         t.value.integer = sign*integral;
 
@@ -543,6 +567,356 @@ std::string read_whole_file(const char *filename) {
 }
 
 
+template <typename Iterator>
+son parse_array(Iterator& begin, Iterator& end, bool top_level) {
+    Iterator it = begin;
+
+    son result(son::type_t::array);
+    bool have_open_bracket = false;
+    // token* t_bracket_open = nullptr;
+
+    {
+        token t = *it;
+
+        if (t.kind != TOKEN_BRACKET_OPEN and !top_level) {
+            // report error
+            // "%s:%lu:%lu: error: ’[’ is expected, found %s ’%.*s’\n"
+
+            return son();
+        }
+
+        have_open_bracket = t.kind == TOKEN_BRACKET_OPEN;
+        if (have_open_bracket) {
+            // t_bracket_open = t;
+            it++;
+        }
+    }
+
+middle:
+    do {
+        {
+            token t = *it;
+
+            switch (t.kind) {
+                case TOKEN_KW_NULL: {
+                    result.push(son());
+                    it++;
+                    break;
+                }
+                case TOKEN_KW_TRUE: {
+                    result.push(true);
+                    it++;
+                    break;
+                }
+                case TOKEN_KW_FALSE: {
+                    result.push(false);
+                    it++;
+                    break;
+                }
+                case TOKEN_INTEGER: {
+                    result.push(t.value.integer);
+                    it++;
+                    break;
+                }
+                case TOKEN_FLOATING: {
+                    result.push(t.value.floating);
+                    it++;
+                    break;
+                }
+                case TOKEN_STRING: {
+                    result.push(std::string(t.in_text.begin + 1, t.in_text.size - 2));
+                    it++;
+                    break;
+                }
+                case TOKEN_BRACE_OPEN: {
+                    // This is an object
+                    son object = parse_object(it, end, false);
+
+                    if (object.is_null()) {
+                        return son();
+                    }
+
+                    result.push(object);
+                    break;
+                }
+                case TOKEN_BRACKET_OPEN: {
+                    // This is a nested array
+                    son array = parse_array(it, end, false);
+
+                    if (array.is_null()) {
+                        return son();
+                    }
+
+                    result.push(array);
+                    break;
+                }
+                case TOKEN_BRACKET_CLOSE: // If empty list
+                    break;
+                default:
+                    // error_t error;
+                    // eprintf(error, "%s:%lu:%lu: error: ’]’ is expected, found %s ’%.*s’\n",
+
+                    return son();
+            }
+        }
+
+        {
+            token t = *it;
+
+            if (t.kind == TOKEN_COMMA) {
+                it++;
+            }
+
+            if (t.kind == TOKEN_BRACKET_CLOSE or t.kind == TOKEN_EOF) {
+                break;
+            }
+        }
+    } while (true);
+
+    {
+        token t = *it;
+
+        if (have_open_bracket and t.kind == TOKEN_BRACKET_CLOSE) {
+            // Consume ']'
+            it++;
+        }
+        else if (!have_open_bracket and t.kind == TOKEN_BRACKET_CLOSE) {
+            // error_t error;
+            // eprintf(error, "%s:%lu:%lu: error: expected EOF (end of naked top level list), found %s ’%.*s’\n",
+            return son();
+        }
+        else if (have_open_bracket and t.kind != TOKEN_BRACKET_CLOSE) {
+            // error_t error;
+            // eprintf(error, "%s:%lu:%lu: error: ’]’ is expected, found %s ’%.*s’\n",
+            return son();
+        }
+    }
+
+    {
+        token t = *it;
+        if (t.kind != TOKEN_EOF and top_level) {
+            son top_level_list;
+            top_level_list.push(result);
+            result = top_level_list;
+            have_open_bracket = false;
+            goto middle; // @FIX BAD BAD BAD!!!
+        }
+    }
+
+    begin = it;
+    return result;
+}
+
+
+template <typename Iterator>
+bool parse_key_value_pair(Iterator& begin, Iterator& end, std::string& key, son& value, bool top_level) {
+    Iterator it = begin;
+
+    {
+        token t = *it;
+
+        if (top_level and t.kind == TOKEN_EOF) { return false; }
+        if (not top_level and t.kind == TOKEN_BRACE_CLOSE) { return false; }
+        if (t.kind != TOKEN_IDENTIFIER) {
+            // report error
+            // "%s:%lu:%lu: error: expected identifier, but found %s ’%.*s’\n"
+
+            return false;
+        }
+
+        key = std::string(t.in_text.begin, t.in_text.size);
+        it++;
+    }
+
+    {
+        token t = *it;
+
+        if (t.kind != TOKEN_EQUAL_SIGN) {
+            // report error
+            // "%s:%lu:%lu: error: expected ’=’, but found %s ’%.*s’\n"
+
+            return false;
+        }
+
+        it++;
+    }
+
+    {
+        token t = *it;
+
+        switch (t.kind) {
+        case TOKEN_KW_NULL: {
+            value = son();
+            it++;
+            break;
+        }
+        case TOKEN_KW_TRUE: {
+            value = son(true);
+            it++;
+            break;
+        }
+        case TOKEN_KW_FALSE: {
+            value = son(false);
+            it++;
+            break;
+        }
+        case TOKEN_INTEGER: {
+            value = son(t.value.integer);
+            it++;
+            break;
+        }
+        case TOKEN_FLOATING: {
+            value = son(t.value.floating);
+            it++;
+            break;
+        }
+        case TOKEN_STRING: {
+            value = son(std::string(t.in_text.begin + 1, t.in_text.size - 2));
+            it++;
+            break;
+        }
+        case TOKEN_BRACE_OPEN: {
+            son object = parse_object(it, end, false);
+            if (object.is_null()) {
+                // report error
+                // "%s:%lu:%lu: error: value is expected, found %s ’%.*s’\n"
+                return false;
+            }
+
+            value = std::move(object);
+            break;
+        }
+        case TOKEN_BRACKET_OPEN: {
+            son array = parse_array(it, end, false);
+            if (array.is_null()) {
+                // report error
+                // "%s:%lu:%lu: error: value is expected, found %s ’%.*s’\n"
+
+                return false;
+            }
+
+            value = array;
+            break;
+        }
+        default: {
+            // report error
+            // "%s:%lu:%lu: error: value is expected, found ’%.*s’\n"
+
+            return false;
+        }
+        }
+    }
+
+    {
+        token t = *it;
+
+        if (t.kind == TOKEN_SEMICOLON) {
+            it++; // Skip semicolon.
+        } else {
+            // Semicolon is optional.
+        }
+    }
+
+    // We reached the end, it's all good.
+    begin = it;
+    return true;
+}
+
+template <typename Iterator>
+son parse_object(Iterator& begin, Iterator& end, bool top_level = false) {
+    Iterator it = begin;
+    bool have_open_brace = false;
+
+    son result;
+
+    {
+        token t = *it;
+        if (!(t.kind == TOKEN_BRACE_OPEN or
+             (t.kind == TOKEN_IDENTIFIER and top_level))) {
+            // "%s:%lu:%lu: error: '{' expected, found %s ’%.*s’\n"
+            return son();
+        }
+
+        have_open_brace = t.kind == TOKEN_BRACE_OPEN;
+
+        if (t.kind == TOKEN_BRACE_OPEN) {
+            it++;
+        }
+    }
+
+    {
+        do {
+            token t = *it;
+
+            if (t.kind != TOKEN_IDENTIFIER) break;
+
+            std::string key;
+            son value;
+            if (!parse_key_value_pair(it, end, key, value, top_level)) break;
+
+            result.push(key, value);
+        } while (true);
+    }
+
+    {
+        token t = *it;
+
+        if (top_level and have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
+            // report error
+            // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
+
+            return son();
+        }
+
+        if (top_level and !have_open_brace and t.kind != TOKEN_EOF) {
+            // report error
+            // "%s:%lu:%lu: error: expected EOF (end of naked top level object), but found %s ’%.*s’\n"
+
+            return son();
+        }
+
+        if (top_level and have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
+            // report error
+            // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
+
+            return son();
+        }
+
+        if (top_level and !have_open_brace and t.kind != TOKEN_EOF) {
+            // report error
+            // "%s:%lu:%lu: error: expected EOF (end of naked top level object), but found %s ’%.*s’\n"
+
+            return son();
+        }
+
+        if (!top_level and !have_open_brace) {
+            assert(false); // I don't know is this even possible
+        }
+
+        if (have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
+            // report error
+            // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
+
+            return son();
+        }
+
+        if (t.kind == TOKEN_BRACE_CLOSE) {
+            it++; // Consume '}'
+        }
+    }
+
+    begin = it;
+    return result;
+}
+
+
+son parse_impl(lexer& lex) {
+    auto begin = lex.token_stream.begin();
+    auto end = lex.token_stream.end();
+    return parse_object(begin, end, true);
+}
+
+
 son parser::parse() {
     lexer l;
     l.filename = filename.c_str();
@@ -560,7 +934,9 @@ son parser::parse() {
         print_token(t);
     }
 
-    return son();
+    son result = parse_impl(l);
+
+    return result;
 }
 
 };
