@@ -1,7 +1,8 @@
-{
-    name = "John Doe"
-    organization = "Big Evil Corporation Inc."
-    age = 38
-    married = false
-    primes = [ { a = 1 b = 2 }  1.0 true null "baba is you" ]
+name = "John Doe"
+organization = {
+    name = "Big Evil Corporation Inc."
+    city = "Washington DC"
 }
+age = 38
+married = false
+primes = [ { a = 1 b = 2 }  1.0 true null "baba is you" ]

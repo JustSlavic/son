@@ -918,25 +918,19 @@ son parse_impl(lexer& lex) {
 
 
 son parser::parse() {
-    lexer l;
-    l.filename = filename.c_str();
+    lexer lex;
+    lex.filename = filename.c_str();
 
     std::string text = read_whole_file(filename.c_str());
-    l.text.begin = text.data();
-    l.text.size = text.size();
+    lex.text.begin = text.data();
+    lex.text.size = text.size();
 
-    l.state.current_char = l.text.begin;
-    l.state.current_line = l.text.begin;
+    lex.state.current_char = lex.text.begin;
+    lex.state.current_line = lex.text.begin;
 
-    l.tokenize();
+    lex.tokenize();
 
-    for (auto& t : l.token_stream) {
-        print_token(t);
-    }
-
-    son result = parse_impl(l);
-
-    return result;
+    return parse_impl(lex);
 }
 
 };
