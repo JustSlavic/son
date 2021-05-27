@@ -190,8 +190,8 @@ struct print_options {
     };
     
     FILE* output = stdout;
-    bool print_semicolons = false;
-    bool print_commas = false;
+    bool print_semicolons = true;
+    bool print_commas = true;
     int32_t indent = 2;
     multiline_t multiline = multiline_t::smart;
 };

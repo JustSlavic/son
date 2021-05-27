@@ -3,5 +3,5 @@
     organization = "Big Evil Corporation Inc."
     age = 38
     married = false
-    siblings = []
+    primes = [ { a = 1 b = 2 }  1.0 true null "baba is you" ]
 }
