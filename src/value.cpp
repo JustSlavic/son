@@ -253,6 +253,7 @@ son son::get(const char* key, const son& default_value) {
 
     for (auto& pair : (*p_storage)) {
         if (pair.first == std::string(key)) {
+            if (pair.second.is_null()) return default_value;
             return pair.second;
         }
     }
