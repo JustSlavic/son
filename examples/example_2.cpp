@@ -18,6 +18,11 @@ int main() {
     pretty_print(result);
     printf("\n");
 
+    result = parse("example_top_level_array.son");
+
+    pretty_print(result);
+    printf("\n");
+
     printf("Finish testing.\n");
     return 0;
 }

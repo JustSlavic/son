@@ -34,8 +34,7 @@ int main() {
 
 	printf("Test parsing son object and creating scheme from example_2.son:\n\n");
 
-	parser p("example_2.son");
-	son result = p.parse();
+	son result = parse("example_2.son");
 
 	son scheme = create_scheme_from_son(result);
 

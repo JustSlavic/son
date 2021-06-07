@@ -913,7 +913,19 @@ son parse_object(Iterator& begin, Iterator& end, bool top_level = false) {
 son parse_impl(lexer& lex) {
     auto begin = lex.token_stream.begin();
     auto end = lex.token_stream.end();
-    return parse_object(begin, end, true);
+    
+    son obj = parse_object(begin, end, true);
+
+    if (!obj.is_null()) {
+        return obj;
+    }
+
+    begin = lex.token_stream.begin();
+    end = lex.token_stream.end();
+
+    son arr = parse_array(begin, end, true);
+
+    return arr;
 }
 
 
