@@ -26,6 +26,8 @@ son create_scheme_from_son(son& value, std::string* key = nullptr) {
 		return { {"key", key ? *key : son()}, {"type", value.type_name()}, {"values", {}} };
 	}
 	}
+
+	return {};
 }
 
 

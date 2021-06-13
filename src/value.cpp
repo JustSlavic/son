@@ -1,5 +1,6 @@
 #include <value.hpp>
 #include <algorithm>
+#include <inttypes.h>
 
 
 namespace jslavic {
@@ -184,6 +185,10 @@ bool son::operator==(const son& other) const {
         return (*p_storage) == (*p_other_storage);
     }
     }
+
+    // Why gcc says that control reaches end of non-void function,
+    // if there's return in every possible case above?
+    return false;
 }
 
 
@@ -266,7 +271,7 @@ son son::get(int32_t idx, const son& default_value) {
     assert(is_array());
     array_t* p_storage = (array_t*)m_value.storage;
 
-    if (idx < p_storage->size()) {
+    if (static_cast<size_t>(idx) < p_storage->size()) {
         return (*p_storage)[idx];
     }
 
@@ -317,6 +322,13 @@ bool son::empty() const {
         return p_storage->empty();
     }
     }
+
+    // Why gcc says that control reaches end of non-void function,
+    // if there's return in every possible case above?
+    // What should I return then? I don't know, it doesn't make sense.
+    // Try to return 0, to match fallthrough of size() function, so
+    // it'll be empty and of size 0.
+    return true;
 }
 
 
@@ -337,6 +349,10 @@ size_t son::size() const {
         return p_storage->size();
     }
     }
+
+    // Why gcc says that control reaches end of non-void function,
+    // if there's return in every possible case above?
+    return 0;
 }
 
 
@@ -366,6 +382,10 @@ size_t son::deep_size() const {
         return n;
     }
     }
+
+    // Why gcc says that control reaches end of non-void function,
+    // if there's return in every possible case above?
+    return 0;
 }
 
 
@@ -436,17 +456,20 @@ int32_t pretty_print_impl(son& value, const print_options& options, int32_t dept
     switch (value.type()) {
     case son::type_t::null: fprintf(options.output, "null"); break;
     case son::type_t::boolean: fprintf(options.output, "%s", value.get_boolean() ? "true" : "false"); break;
-    case son::type_t::integer: fprintf(options.output, "%lld", value.get_integer()); break;
+    case son::type_t::integer: fprintf(options.output, PRId64, value.get_integer()); break;
     case son::type_t::floating: fprintf(options.output, "%lf", value.get_floating()); break;
     case son::type_t::string: fprintf(options.output, "\"%s\"", value.get_string().c_str()); break;
     case son::type_t::object: {
-        bool in_one_line = options.multiline == print_options::multiline_t::smart && value.deep_size() <= 6
+        bool in_one_line = (options.multiline == print_options::multiline_t::smart && value.deep_size() <= 6)
             || options.multiline == print_options::multiline_t::disabled;
 
         fprintf(options.output, "{%s", in_one_line ? " " : "\n");
         depth += 1;
 
-        for (auto [k, v] : value.pairs()) {
+        for (auto p : value.pairs()) {
+            auto& k = p.first;
+            auto& v = p.second;
+
             if (!in_one_line) { fprintf(options.output, "%.*s", options.indent * depth, spaces); }
             fprintf(options.output, "%s = ", k.c_str());
 
@@ -463,7 +486,7 @@ int32_t pretty_print_impl(son& value, const print_options& options, int32_t dept
         break;
     }
     case son::type_t::array: {
-        bool in_one_line = options.multiline == print_options::multiline_t::smart && value.deep_size() <= 6
+        bool in_one_line = (options.multiline == print_options::multiline_t::smart && value.deep_size() <= 6)
             || options.multiline == print_options::multiline_t::disabled;
 
         fprintf(options.output, "[%s", in_one_line ? value.size() > 0 ? " " : "" : "\n");

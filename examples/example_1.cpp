@@ -1,5 +1,6 @@
 #include <son.hpp>
 #include <stdio.h>
+#include <inttypes.h>
 
 
 const char* bool_to_cstr(bool b) {
@@ -21,7 +22,7 @@ int main() {
 
     son integer_value(42);
     printf("integer_value.is_integer() == %s\n", bool_to_cstr(integer_value.is_integer()));
-    printf("integer_value.get_integer() == %lld\n\n", integer_value.get_integer());
+    printf("integer_value.get_integer() == %" PRId64 "\n\n", integer_value.get_integer());
 
     son floating_value(103.4);
     printf("floating_value.is_floating() == %s\n", bool_to_cstr(floating_value.is_floating()));

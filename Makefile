@@ -62,6 +62,7 @@ clean:
 	@find build -type f -name '*.o' -delete
 	@find build -type f -name '*.d' -delete
 	@rm -fv bin/*/lib$(PROJECT).a
+	$(MAKE) -C examples clean
 
 examples: $(PROJECT_LIB)
 	$(MAKE) -C examples

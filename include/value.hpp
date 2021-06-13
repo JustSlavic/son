@@ -178,6 +178,8 @@ public:
             case type_t::array: return "array";
             // case type_t::custom: return "custom";
         }
+
+        return nullptr;
     }
 };
 

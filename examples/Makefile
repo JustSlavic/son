@@ -23,4 +23,9 @@ all:
 	@mkdir -p $(OUT_DIR)
 	g++ example_1.cpp ../bin/debug/libson.a -o $(OUT_DIR)/example_1 $(CXX_FLAGS)
 	g++ example_2.cpp ../bin/debug/libson.a -o $(OUT_DIR)/example_2 $(CXX_FLAGS)
+	g++ example_3.cpp ../bin/debug/libson.a -o $(OUT_DIR)/example_3 $(CXX_FLAGS)
 	cp ../examples/example_2.son ../bin/examples/example_2.son
+	cp ../examples/example_3.son ../bin/examples/example_3.son
+
+clean:
+	rm $(OUT_DIR)/example_*

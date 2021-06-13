@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
+#include <inttypes.h>
 
 
 namespace jslavic {
@@ -38,74 +39,75 @@ enum kind_t {
     TOKEN_EOF,
 };
 
-static const char* to_debug_string(kind_t k) {
-    switch (k) {
-        case TOKEN_UNDEFINED:     return "TOKEN_UNDEFINED";
 
-        case TOKEN_EQUAL_SIGN:    return "TOKEN_EQUAL_SIGN";
-        case TOKEN_SEMICOLON:     return "TOKEN_SEMICOLON";
-        case TOKEN_COMMA:         return "TOKEN_COMMA";
+// static const char* to_debug_string(kind_t k) {
+//     switch (k) {
+//         case TOKEN_UNDEFINED:     return "TOKEN_UNDEFINED";
 
-        case TOKEN_BRACE_OPEN:    return "TOKEN_BRACE_OPEN";
-        case TOKEN_BRACE_CLOSE:   return "TOKEN_BRACE_CLOSE";
+//         case TOKEN_EQUAL_SIGN:    return "TOKEN_EQUAL_SIGN";
+//         case TOKEN_SEMICOLON:     return "TOKEN_SEMICOLON";
+//         case TOKEN_COMMA:         return "TOKEN_COMMA";
 
-        case TOKEN_PAREN_OPEN:    return "TOKEN_PAREN_OPEN";
-        case TOKEN_PAREN_CLOSE:   return "TOKEN_PAREN_CLOSE";
+//         case TOKEN_BRACE_OPEN:    return "TOKEN_BRACE_OPEN";
+//         case TOKEN_BRACE_CLOSE:   return "TOKEN_BRACE_CLOSE";
 
-        case TOKEN_BRACKET_OPEN:  return "TOKEN_BRACKET_OPEN";
-        case TOKEN_BRACKET_CLOSE: return "TOKEN_BRACKET_CLOSE";
+//         case TOKEN_PAREN_OPEN:    return "TOKEN_PAREN_OPEN";
+//         case TOKEN_PAREN_CLOSE:   return "TOKEN_PAREN_CLOSE";
 
-        case TOKEN_KW_NULL:       return "TOKEN_KW_NULL";
-        case TOKEN_KW_TRUE:       return "TOKEN_KW_TRUE";
-        case TOKEN_KW_FALSE:      return "TOKEN_KW_FALSE";
+//         case TOKEN_BRACKET_OPEN:  return "TOKEN_BRACKET_OPEN";
+//         case TOKEN_BRACKET_CLOSE: return "TOKEN_BRACKET_CLOSE";
 
-        case TOKEN_IDENTIFIER:    return "TOKEN_IDENTIFIER";
-        case TOKEN_INTEGER:       return "TOKEN_INTEGER";
-        case TOKEN_FLOATING:      return "TOKEN_FLOATING";
-        case TOKEN_STRING:        return "TOKEN_STRING";
+//         case TOKEN_KW_NULL:       return "TOKEN_KW_NULL";
+//         case TOKEN_KW_TRUE:       return "TOKEN_KW_TRUE";
+//         case TOKEN_KW_FALSE:      return "TOKEN_KW_FALSE";
 
-        case TOKEN_DOUBLE_SLASH:  return "TOKEN_DOUBLE_SLASH";
+//         case TOKEN_IDENTIFIER:    return "TOKEN_IDENTIFIER";
+//         case TOKEN_INTEGER:       return "TOKEN_INTEGER";
+//         case TOKEN_FLOATING:      return "TOKEN_FLOATING";
+//         case TOKEN_STRING:        return "TOKEN_STRING";
 
-        case TOKEN_EOF:           return "TOKEN_EOF";
-    }
+//         case TOKEN_DOUBLE_SLASH:  return "TOKEN_DOUBLE_SLASH";
 
-    return "ERROR";
-}
+//         case TOKEN_EOF:           return "TOKEN_EOF";
+//     }
+
+//     return "ERROR";
+// }
 
 
-static const char* to_string(kind_t k) {
-    switch (k) {
-        case TOKEN_UNDEFINED:     return "? undefined";
+// static const char* to_string(kind_t k) {
+//     switch (k) {
+//         case TOKEN_UNDEFINED:     return "? undefined";
 
-        case TOKEN_EQUAL_SIGN:    return "=";
-        case TOKEN_SEMICOLON:     return ";";
-        case TOKEN_COMMA:         return ",";
+//         case TOKEN_EQUAL_SIGN:    return "=";
+//         case TOKEN_SEMICOLON:     return ";";
+//         case TOKEN_COMMA:         return ",";
 
-        case TOKEN_BRACE_OPEN:    return "{";
-        case TOKEN_BRACE_CLOSE:   return "}";
+//         case TOKEN_BRACE_OPEN:    return "{";
+//         case TOKEN_BRACE_CLOSE:   return "}";
 
-        case TOKEN_PAREN_OPEN:    return "(";
-        case TOKEN_PAREN_CLOSE:   return ")";
+//         case TOKEN_PAREN_OPEN:    return "(";
+//         case TOKEN_PAREN_CLOSE:   return ")";
 
-        case TOKEN_BRACKET_OPEN:  return "[";
-        case TOKEN_BRACKET_CLOSE: return "]";
+//         case TOKEN_BRACKET_OPEN:  return "[";
+//         case TOKEN_BRACKET_CLOSE: return "]";
 
-        case TOKEN_KW_NULL:       return "null";
-        case TOKEN_KW_TRUE:       return "true";
-        case TOKEN_KW_FALSE:      return "false";
+//         case TOKEN_KW_NULL:       return "null";
+//         case TOKEN_KW_TRUE:       return "true";
+//         case TOKEN_KW_FALSE:      return "false";
 
-        case TOKEN_IDENTIFIER:    return "identifier";
-        case TOKEN_INTEGER:       return "integer";
-        case TOKEN_FLOATING:      return "floating";
-        case TOKEN_STRING:        return "string";
+//         case TOKEN_IDENTIFIER:    return "identifier";
+//         case TOKEN_INTEGER:       return "integer";
+//         case TOKEN_FLOATING:      return "floating";
+//         case TOKEN_STRING:        return "string";
 
-        case TOKEN_DOUBLE_SLASH:  return "//";
+//         case TOKEN_DOUBLE_SLASH:  return "//";
 
-        case TOKEN_EOF:           return "EOF";
-    }
+//         case TOKEN_EOF:           return "EOF";
+//     }
 
-    return "ERROR";
-}
+//     return "ERROR";
+// }
 
 
 struct span {
@@ -136,42 +138,42 @@ struct token {
 };
 
 
-void print_token(token t) {
-    printf("%3llu:%2llu token { kind = %20s; value = ", t.line_number, t.char_number, to_debug_string(t.kind));
+// void print_token(token t) {
+//     printf("%3" PRIu64 ":%2" PRIu64 " token { kind = %20s; value = ", t.line_number, t.char_number, to_debug_string(t.kind));
 
-    switch (t.kind) {
-        case TOKEN_UNDEFINED: printf("ERROR! }\n"); break;
-        case TOKEN_EOF:       printf("EOF; }\n"); break;
-        case TOKEN_KW_NULL:   printf("null; }\n"); break;
-        case TOKEN_KW_TRUE:   printf("true; }\n"); break;
-        case TOKEN_KW_FALSE:  printf("false; }\n"); break;
-        case TOKEN_INTEGER:   printf("%lld; }\n", t.value.integer); break;
-        case TOKEN_FLOATING:  printf("%lf; }\n", t.value.floating); break;
+//     switch (t.kind) {
+//         case TOKEN_UNDEFINED: printf("ERROR! }\n"); break;
+//         case TOKEN_EOF:       printf("EOF; }\n"); break;
+//         case TOKEN_KW_NULL:   printf("null; }\n"); break;
+//         case TOKEN_KW_TRUE:   printf("true; }\n"); break;
+//         case TOKEN_KW_FALSE:  printf("false; }\n"); break;
+//         case TOKEN_INTEGER:   printf(PRId64"; }\n", t.value.integer); break;
+//         case TOKEN_FLOATING:  printf("%lf; }\n", t.value.floating); break;
 
-        case TOKEN_IDENTIFIER:
-        case TOKEN_STRING:
-            printf("%.*s; }\n", int(t.in_text.size), t.in_text.begin);
-            break;
+//         case TOKEN_IDENTIFIER:
+//         case TOKEN_STRING:
+//             printf("%.*s; }\n", int(t.in_text.size), t.in_text.begin);
+//             break;
 
-        case TOKEN_EQUAL_SIGN:
-        case TOKEN_SEMICOLON:
-        case TOKEN_COMMA:
-        case TOKEN_BRACE_OPEN:
-        case TOKEN_BRACE_CLOSE:
-        case TOKEN_PAREN_OPEN:
-        case TOKEN_PAREN_CLOSE:
-        case TOKEN_BRACKET_OPEN:
-        case TOKEN_BRACKET_CLOSE:
-            printf("'%c'; }\n", char(t.kind));
-            break;
+//         case TOKEN_EQUAL_SIGN:
+//         case TOKEN_SEMICOLON:
+//         case TOKEN_COMMA:
+//         case TOKEN_BRACE_OPEN:
+//         case TOKEN_BRACE_CLOSE:
+//         case TOKEN_PAREN_OPEN:
+//         case TOKEN_PAREN_CLOSE:
+//         case TOKEN_BRACKET_OPEN:
+//         case TOKEN_BRACKET_CLOSE:
+//             printf("'%c'; }\n", char(t.kind));
+//             break;
 
-        case TOKEN_DOUBLE_SLASH:
-            printf("//; }\n");
-            break;
-        default:
-            printf("??? }\n");
-    }
-}
+//         case TOKEN_DOUBLE_SLASH:
+//             printf("//; }\n");
+//             break;
+//         default:
+//             printf("??? }\n");
+//     }
+// }
 
 
 
@@ -393,7 +395,7 @@ public:
         return false;
     }
 
-    // @make that escaped newlines do not show up in resulted string
+    // @Fix escaped newlines should not show up in resulted string.
     bool eat_quoted_string () {
         auto checkpoint = get_checkpoint();
         uint64_t length = 0;
