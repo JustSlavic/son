@@ -569,354 +569,374 @@ std::string read_whole_file(const char *filename) {
 }
 
 
-template <typename Iterator>
-son parse_array(Iterator& begin, Iterator& end, bool top_level) {
-    Iterator it = begin;
+struct parser_impl {
+    std::deque<token> token_stream;
+    std::deque<token>::iterator it;
 
-    son result(son::type_t::array);
-    bool have_open_bracket = false;
-    // token* t_bracket_open = nullptr;
+    son parse_array(bool top_level = false) {
+        auto checkpoint = it;
 
-    {
-        token t = *it;
+        son result(son::type_t::array);
+        bool have_open_bracket = false;
 
-        if (t.kind != TOKEN_BRACKET_OPEN and !top_level) {
-            // report error
-            // "%s:%lu:%lu: error: ’[’ is expected, found %s ’%.*s’\n"
+        {
+            token t = *it;
 
-            return son();
+            if (t.kind != TOKEN_BRACKET_OPEN and !top_level) {
+                // report error
+                // "%s:%lu:%lu: error: ’[’ is expected, found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return son();
+            }
+
+            have_open_bracket = t.kind == TOKEN_BRACKET_OPEN;
+            if (have_open_bracket) {
+                // t_bracket_open = t;
+                it++;
+            }
         }
-
-        have_open_bracket = t.kind == TOKEN_BRACKET_OPEN;
-        if (have_open_bracket) {
-            // t_bracket_open = t;
-            it++;
-        }
-    }
 
 middle:
-    do {
+        do {
+            {
+                token t = *it;
+
+                switch (t.kind) {
+                    case TOKEN_KW_NULL: {
+                        result.push(son());
+                        it++;
+                        break;
+                    }
+                    case TOKEN_KW_TRUE: {
+                        result.push(true);
+                        it++;
+                        break;
+                    }
+                    case TOKEN_KW_FALSE: {
+                        result.push(false);
+                        it++;
+                        break;
+                    }
+                    case TOKEN_INTEGER: {
+                        result.push(t.value.integer);
+                        it++;
+                        break;
+                    }
+                    case TOKEN_FLOATING: {
+                        result.push(t.value.floating);
+                        it++;
+                        break;
+                    }
+                    case TOKEN_STRING: {
+                        result.push(std::string(t.in_text.begin + 1, t.in_text.size - 2));
+                        it++;
+                        break;
+                    }
+                    case TOKEN_BRACE_OPEN: {
+                        // This is an object
+                        son object = parse_object(false);
+
+                        if (object.is_null()) {
+                            it = checkpoint;
+                            return son();
+                        }
+
+                        result.push(object);
+                        break;
+                    }
+                    case TOKEN_BRACKET_OPEN: {
+                        // This is a nested array
+                        son array = parse_array(false);
+
+                        if (array.is_null()) {
+                            it = checkpoint;
+                            return son();
+                        }
+
+                        result.push(array);
+                        break;
+                    }
+                    case TOKEN_BRACKET_CLOSE: // If empty list
+                        break;
+                    default:
+                        // error_t error;
+                        // eprintf(error, "%s:%lu:%lu: error: ’]’ is expected, found %s ’%.*s’\n",
+
+                        it = checkpoint;
+                        return son();
+                }
+            }
+
+            {
+                token t = *it;
+
+                if (t.kind == TOKEN_COMMA) {
+                    it++;
+                }
+
+                if (t.kind == TOKEN_BRACKET_CLOSE or t.kind == TOKEN_EOF) {
+                    break;
+                }
+            }
+        } while (true);
+
+        {
+            token t = *it;
+
+            if (have_open_bracket and t.kind == TOKEN_BRACKET_CLOSE) {
+                // Consume ']'
+                it++;
+            }
+            else if (!have_open_bracket and t.kind == TOKEN_BRACKET_CLOSE) {
+                // error_t error;
+                // eprintf(error, "%s:%lu:%lu: error: expected EOF (end of naked top level list), found %s ’%.*s’\n",
+                it = checkpoint;
+                return son();
+            }
+            else if (have_open_bracket and t.kind != TOKEN_BRACKET_CLOSE) {
+                // error_t error;
+                // eprintf(error, "%s:%lu:%lu: error: ’]’ is expected, found %s ’%.*s’\n",
+                it = checkpoint;
+                return son();
+            }
+        }
+
+        {
+            token t = *it;
+            if (t.kind != TOKEN_EOF and top_level) {
+                son top_level_list;
+                top_level_list.push(result);
+                result = top_level_list;
+                have_open_bracket = false;
+                goto middle; // @FIX BAD BAD BAD!!!
+            }
+        }
+
+        return result;
+    }
+
+    bool parse_key_value_pair(std::string& key, son& value, bool top_level) {
+        auto checkpoint = it;
+
+        {
+            token t = *it;
+
+            if (top_level and t.kind == TOKEN_EOF) { return false; }
+            if (not top_level and t.kind == TOKEN_BRACE_CLOSE) { return false; }
+            if (t.kind != TOKEN_IDENTIFIER) {
+                // report error
+                // "%s:%lu:%lu: error: expected identifier, but found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return false;
+            }
+
+            key = std::string(t.in_text.begin, t.in_text.size);
+            it++;
+        }
+
+        {
+            token t = *it;
+
+            if (t.kind != TOKEN_EQUAL_SIGN) {
+                // report error
+                // "%s:%lu:%lu: error: expected ’=’, but found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return false;
+            }
+
+            it++;
+        }
+
         {
             token t = *it;
 
             switch (t.kind) {
-                case TOKEN_KW_NULL: {
-                    result.push(son());
-                    it++;
-                    break;
-                }
-                case TOKEN_KW_TRUE: {
-                    result.push(true);
-                    it++;
-                    break;
-                }
-                case TOKEN_KW_FALSE: {
-                    result.push(false);
-                    it++;
-                    break;
-                }
-                case TOKEN_INTEGER: {
-                    result.push(t.value.integer);
-                    it++;
-                    break;
-                }
-                case TOKEN_FLOATING: {
-                    result.push(t.value.floating);
-                    it++;
-                    break;
-                }
-                case TOKEN_STRING: {
-                    result.push(std::string(t.in_text.begin + 1, t.in_text.size - 2));
-                    it++;
-                    break;
-                }
-                case TOKEN_BRACE_OPEN: {
-                    // This is an object
-                    son object = parse_object(it, end, false);
+            case TOKEN_KW_NULL: {
+                value = son();
+                it++;
+                break;
+            }
+            case TOKEN_KW_TRUE: {
+                value = son(true);
+                it++;
+                break;
+            }
+            case TOKEN_KW_FALSE: {
+                value = son(false);
+                it++;
+                break;
+            }
+            case TOKEN_INTEGER: {
+                value = son(t.value.integer);
+                it++;
+                break;
+            }
+            case TOKEN_FLOATING: {
+                value = son(t.value.floating);
+                it++;
+                break;
+            }
+            case TOKEN_STRING: {
+                value = son(std::string(t.in_text.begin + 1, t.in_text.size - 2));
+                it++;
+                break;
+            }
+            case TOKEN_BRACE_OPEN: {
+                son object = parse_object(false);
+                if (object.is_null()) {
+                    // report error
+                    // "%s:%lu:%lu: error: value is expected, found %s ’%.*s’\n"
 
-                    if (object.is_null()) {
-                        return son();
-                    }
-
-                    result.push(object);
-                    break;
+                    it = checkpoint;
+                    return false;
                 }
-                case TOKEN_BRACKET_OPEN: {
-                    // This is a nested array
-                    son array = parse_array(it, end, false);
 
-                    if (array.is_null()) {
-                        return son();
-                    }
+                value = std::move(object);
+                break;
+            }
+            case TOKEN_BRACKET_OPEN: {
+                son array = parse_array(false);
+                if (array.is_null()) {
+                    // report error
+                    // "%s:%lu:%lu: error: value is expected, found %s ’%.*s’\n"
 
-                    result.push(array);
-                    break;
+                    it = checkpoint;
+                    return false;
                 }
-                case TOKEN_BRACKET_CLOSE: // If empty list
-                    break;
-                default:
-                    // error_t error;
-                    // eprintf(error, "%s:%lu:%lu: error: ’]’ is expected, found %s ’%.*s’\n",
 
-                    return son();
+                value = array;
+                break;
+            }
+            default: {
+                // report error
+                // "%s:%lu:%lu: error: value is expected, found ’%.*s’\n"
+
+                it = checkpoint;
+                return false;
+            }
             }
         }
 
         {
             token t = *it;
 
-            if (t.kind == TOKEN_COMMA) {
+            if (t.kind == TOKEN_SEMICOLON) {
+                it++; // Skip semicolon.
+            } else {
+                // Semicolon is optional.
+            }
+        }
+
+        // We reached the end, it's all good.
+        return true;
+    }
+
+    son parse_object(bool top_level = false) {
+        auto checkpoint = it;
+        bool have_open_brace = false;
+
+        son result;
+
+        {
+            token t = *it;
+            if (!(t.kind == TOKEN_BRACE_OPEN or
+                 (t.kind == TOKEN_IDENTIFIER and top_level))) {
+                // "%s:%lu:%lu: error: '{' expected, found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return son();
+            }
+
+            have_open_brace = t.kind == TOKEN_BRACE_OPEN;
+
+            if (t.kind == TOKEN_BRACE_OPEN) {
                 it++;
             }
-
-            if (t.kind == TOKEN_BRACKET_CLOSE or t.kind == TOKEN_EOF) {
-                break;
-            }
-        }
-    } while (true);
-
-    {
-        token t = *it;
-
-        if (have_open_bracket and t.kind == TOKEN_BRACKET_CLOSE) {
-            // Consume ']'
-            it++;
-        }
-        else if (!have_open_bracket and t.kind == TOKEN_BRACKET_CLOSE) {
-            // error_t error;
-            // eprintf(error, "%s:%lu:%lu: error: expected EOF (end of naked top level list), found %s ’%.*s’\n",
-            return son();
-        }
-        else if (have_open_bracket and t.kind != TOKEN_BRACKET_CLOSE) {
-            // error_t error;
-            // eprintf(error, "%s:%lu:%lu: error: ’]’ is expected, found %s ’%.*s’\n",
-            return son();
-        }
-    }
-
-    {
-        token t = *it;
-        if (t.kind != TOKEN_EOF and top_level) {
-            son top_level_list;
-            top_level_list.push(result);
-            result = top_level_list;
-            have_open_bracket = false;
-            goto middle; // @FIX BAD BAD BAD!!!
-        }
-    }
-
-    begin = it;
-    return result;
-}
-
-
-template <typename Iterator>
-bool parse_key_value_pair(Iterator& begin, Iterator& end, std::string& key, son& value, bool top_level) {
-    Iterator it = begin;
-
-    {
-        token t = *it;
-
-        if (top_level and t.kind == TOKEN_EOF) { return false; }
-        if (not top_level and t.kind == TOKEN_BRACE_CLOSE) { return false; }
-        if (t.kind != TOKEN_IDENTIFIER) {
-            // report error
-            // "%s:%lu:%lu: error: expected identifier, but found %s ’%.*s’\n"
-
-            return false;
         }
 
-        key = std::string(t.in_text.begin, t.in_text.size);
-        it++;
-    }
+        {
+            do {
+                token t = *it;
 
-    {
-        token t = *it;
+                if (t.kind != TOKEN_IDENTIFIER) break;
 
-        if (t.kind != TOKEN_EQUAL_SIGN) {
-            // report error
-            // "%s:%lu:%lu: error: expected ’=’, but found %s ’%.*s’\n"
+                std::string key;
+                son value;
+                if (!parse_key_value_pair(key, value, top_level)) break;
 
-            return false;
+                result.push(key, value);
+            } while (true);
         }
 
-        it++;
-    }
-
-    {
-        token t = *it;
-
-        switch (t.kind) {
-        case TOKEN_KW_NULL: {
-            value = son();
-            it++;
-            break;
-        }
-        case TOKEN_KW_TRUE: {
-            value = son(true);
-            it++;
-            break;
-        }
-        case TOKEN_KW_FALSE: {
-            value = son(false);
-            it++;
-            break;
-        }
-        case TOKEN_INTEGER: {
-            value = son(t.value.integer);
-            it++;
-            break;
-        }
-        case TOKEN_FLOATING: {
-            value = son(t.value.floating);
-            it++;
-            break;
-        }
-        case TOKEN_STRING: {
-            value = son(std::string(t.in_text.begin + 1, t.in_text.size - 2));
-            it++;
-            break;
-        }
-        case TOKEN_BRACE_OPEN: {
-            son object = parse_object(it, end, false);
-            if (object.is_null()) {
-                // report error
-                // "%s:%lu:%lu: error: value is expected, found %s ’%.*s’\n"
-                return false;
-            }
-
-            value = std::move(object);
-            break;
-        }
-        case TOKEN_BRACKET_OPEN: {
-            son array = parse_array(it, end, false);
-            if (array.is_null()) {
-                // report error
-                // "%s:%lu:%lu: error: value is expected, found %s ’%.*s’\n"
-
-                return false;
-            }
-
-            value = array;
-            break;
-        }
-        default: {
-            // report error
-            // "%s:%lu:%lu: error: value is expected, found ’%.*s’\n"
-
-            return false;
-        }
-        }
-    }
-
-    {
-        token t = *it;
-
-        if (t.kind == TOKEN_SEMICOLON) {
-            it++; // Skip semicolon.
-        } else {
-            // Semicolon is optional.
-        }
-    }
-
-    // We reached the end, it's all good.
-    begin = it;
-    return true;
-}
-
-template <typename Iterator>
-son parse_object(Iterator& begin, Iterator& end, bool top_level = false) {
-    Iterator it = begin;
-    bool have_open_brace = false;
-
-    son result;
-
-    {
-        token t = *it;
-        if (!(t.kind == TOKEN_BRACE_OPEN or
-             (t.kind == TOKEN_IDENTIFIER and top_level))) {
-            // "%s:%lu:%lu: error: '{' expected, found %s ’%.*s’\n"
-            return son();
-        }
-
-        have_open_brace = t.kind == TOKEN_BRACE_OPEN;
-
-        if (t.kind == TOKEN_BRACE_OPEN) {
-            it++;
-        }
-    }
-
-    {
-        do {
+        {
             token t = *it;
 
-            if (t.kind != TOKEN_IDENTIFIER) break;
+            if (top_level and have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
+                // report error
+                // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
 
-            std::string key;
-            son value;
-            if (!parse_key_value_pair(it, end, key, value, top_level)) break;
+                it = checkpoint;
+                return son();
+            }
 
-            result.push(key, value);
-        } while (true);
+            if (top_level and !have_open_brace and t.kind != TOKEN_EOF) {
+                // report error
+                // "%s:%lu:%lu: error: expected EOF (end of naked top level object), but found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return son();
+            }
+
+            if (top_level and have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
+                // report error
+                // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return son();
+            }
+
+            if (top_level and !have_open_brace and t.kind != TOKEN_EOF) {
+                // report error
+                // "%s:%lu:%lu: error: expected EOF (end of naked top level object), but found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return son();
+            }
+
+            if (!top_level and !have_open_brace) {
+                assert(false); // I don't know is this even possible
+            }
+
+            if (have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
+                // report error
+                // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
+
+                it = checkpoint;
+                return son();
+            }
+
+            if (t.kind == TOKEN_BRACE_CLOSE) {
+                it++; // Consume '}'
+            }
+        }
+
+        return result;
     }
-
-    {
-        token t = *it;
-
-        if (top_level and have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
-            // report error
-            // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
-
-            return son();
-        }
-
-        if (top_level and !have_open_brace and t.kind != TOKEN_EOF) {
-            // report error
-            // "%s:%lu:%lu: error: expected EOF (end of naked top level object), but found %s ’%.*s’\n"
-
-            return son();
-        }
-
-        if (top_level and have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
-            // report error
-            // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
-
-            return son();
-        }
-
-        if (top_level and !have_open_brace and t.kind != TOKEN_EOF) {
-            // report error
-            // "%s:%lu:%lu: error: expected EOF (end of naked top level object), but found %s ’%.*s’\n"
-
-            return son();
-        }
-
-        if (!top_level and !have_open_brace) {
-            assert(false); // I don't know is this even possible
-        }
-
-        if (have_open_brace and t.kind != TOKEN_BRACE_CLOSE) {
-            // report error
-            // "%s:%lu:%lu: error: '}' expected, found %s ’%.*s’\n"
-
-            return son();
-        }
-
-        if (t.kind == TOKEN_BRACE_CLOSE) {
-            it++; // Consume '}'
-        }
-    }
-
-    begin = it;
-    return result;
-}
+};
 
 
 son parse_impl(lexer& lex) {
     auto begin = lex.token_stream.begin();
     auto end = lex.token_stream.end();
     
-    son obj = parse_object(begin, end, true);
+    parser_impl parser;
+    parser.token_stream = std::move(lex.token_stream);
+    parser.it = parser.token_stream.begin();
+
+    son obj = parser.parse_object(true);
 
     if (!obj.is_null()) {
         return obj;
@@ -925,7 +945,7 @@ son parse_impl(lexer& lex) {
     begin = lex.token_stream.begin();
     end = lex.token_stream.end();
 
-    son arr = parse_array(begin, end, true);
+    son arr = parser.parse_array(true);
 
     return arr;
 }

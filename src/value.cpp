@@ -1,9 +1,29 @@
 #include <value.hpp>
 #include <algorithm>
+#include <unordered_map>
 #include <inttypes.h>
 
 
 namespace jslavic {
+
+
+struct custom_type_factory {
+    std::unordered_map<std::string, void*> constructors;
+
+    template <typename T, T(*F)()>
+    void register_new_type(const std::string& name) {
+        constructors.emplace(name, F);
+    }
+
+    void* get_constructor_of(const std::string& name) {
+        auto it = constructors.find(name);
+        if (it == constructors.end()) {
+            return nullptr;
+        }
+
+        return it->second;
+    }
+};
 
 
 son::~son() {
