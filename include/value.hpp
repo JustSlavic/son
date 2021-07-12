@@ -109,7 +109,20 @@ public:
         Iterator end() { auto it = Iterator(p); it.set_to_end(); return it; }
     };
 
+    template <typename Iterator>
+    struct const_iterator_proxy {
+        const son* p = nullptr;
+
+        const_iterator_proxy(const son* p) : p(p) {}
+
+    public:
+        Iterator begin() { return Iterator(p); }
+        Iterator end() { auto it = Iterator(p); it.set_to_end(); return it; }
+    };
+
     struct iterator {
+        friend class son;
+    private:
         son* p = nullptr;
         size_t idx = 0;
 
@@ -127,6 +140,28 @@ public:
         bool operator != (const iterator& other) const { return !(*this == other); }
 
         son& operator * ();
+    };
+
+    struct const_iterator {
+        friend class son;
+    private:
+        const son* p = nullptr;
+        size_t idx = 0;
+
+        const_iterator(const son* p) : p(p) {}
+        void set_to_end();
+
+    public:
+        const_iterator& operator ++ () { ++idx; return *this; }
+        const_iterator  operator ++ (int) { const_iterator old = *this; operator++(); return old; }
+
+        const_iterator& operator -- () { --idx; return *this; }
+        const_iterator  operator -- (int) { const_iterator old = *this; operator--(); return old; }
+
+        bool operator == (const const_iterator& other) const { return p == other.p && idx == other.idx; }
+        bool operator != (const const_iterator& other) const { return !(*this == other); }
+
+        const son& operator * () const;
     };
 
     template <typename Iterator>
@@ -159,13 +194,21 @@ public:
             object_t* storage = (object_t*)it.p->m_value.storage;
             return storage[it.idx].first;
         }
+
         son& value() const { return *it; }
     };
 
     iterator begin() { return iterator(this); }
     iterator end() { auto it = iterator(this); it.set_to_end(); return it; }
 
+    const_iterator cbegin() const { return const_iterator(this); }
+    const_iterator cend() const { auto it = const_iterator(this); it.set_to_end(); return it; }
+
+    const_iterator begin() const { return cbegin(); }
+    const_iterator end() const { return cend(); }
+
     iterator_proxy<object_iterator<iterator>> pairs() { return iterator_proxy<object_iterator<iterator>>(this); }
+    const_iterator_proxy<object_iterator<const_iterator>> pairs() const { return const_iterator_proxy<object_iterator<const_iterator>>(this); }
 
     const char* type_name() const noexcept {
         switch (m_type) {
@@ -200,6 +243,7 @@ struct print_options {
 
 
 int32_t pretty_print(const son& value, const print_options& options = print_options());
+int32_t pretty_print(const char* fmt, const son& value, const print_options& options = print_options());
 
 
 } // jslavic

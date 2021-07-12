@@ -449,6 +449,44 @@ void son::iterator::set_to_end() {
 }
 
 
+const son& son::const_iterator::operator * () const {
+    switch (p->m_type) {
+    case type_t::object: {
+        object_t* p_storage = (object_t*)p->m_value.storage;
+        return (*p_storage)[idx].second;
+    }
+    case type_t::array: {
+        array_t* p_storage = (array_t*)p->m_value.storage;
+        return (*p_storage)[idx];
+    }
+    default: return *p;
+    }
+}
+
+
+void son::const_iterator::set_to_end() {
+    switch (p->m_type) {
+    case type_t::null:
+    case type_t::boolean:
+    case type_t::integer:
+    case type_t::floating:
+    case type_t::string:
+        idx = 1;
+        break;
+    case type_t::object: {
+        object_t* p_storage = (object_t*)p->m_value.storage;
+        idx = p_storage->size();
+        break;
+    }
+    case type_t::array: {
+        array_t* p_storage = (array_t*)p->m_value.storage;
+        idx = p_storage->size();
+        break;
+    }
+    }
+}
+
+
 static const char* spaces = "                                                  ";
 int32_t pretty_print_impl(son& value, const print_options& options, int32_t depth) {
     // @Fix: The reason that value is non-constant type is that I didn't make pairs work with constant iterators.
@@ -456,7 +494,7 @@ int32_t pretty_print_impl(son& value, const print_options& options, int32_t dept
     switch (value.type()) {
     case son::type_t::null: fprintf(options.output, "null"); break;
     case son::type_t::boolean: fprintf(options.output, "%s", value.get_boolean() ? "true" : "false"); break;
-    case son::type_t::integer: fprintf(options.output, PRId64, value.get_integer()); break;
+    case son::type_t::integer: fprintf(options.output, "%" PRId64, value.get_integer()); break;
     case son::type_t::floating: fprintf(options.output, "%lf", value.get_floating()); break;
     case son::type_t::string: fprintf(options.output, "\"%s\"", value.get_string().c_str()); break;
     case son::type_t::object: {
@@ -518,6 +556,38 @@ int32_t pretty_print_impl(son& value, const print_options& options, int32_t dept
 int32_t pretty_print(const son& value, const print_options& options /* = print_options()*/) {
     if (options.output == nullptr) { return -1; }
     return pretty_print_impl(const_cast<son&>(value), options, 0);
+}
+
+
+int32_t pretty_print(const char* fmt, const son& value, const print_options& options /* = print_options()*/) {
+    const char* p = fmt;
+    while (*p) {
+        if (*p == '{' && *(p + 1) == '{') {
+            fprintf(options.output, "%.*s{", (int32_t)((uint64_t)p - (uint64_t)fmt), fmt);
+            p = p + 2;
+            fmt = p;
+            continue;
+        }
+        if (*p == '}' && *(p + 1) == '}') {
+            fprintf(options.output, "%.*s}", (int32_t)((uint64_t)p - (uint64_t)fmt), fmt);
+            p = p + 2;
+            fmt = p;
+            continue;
+        }
+        if (*p == '{' && *(p + 1) == '}') {
+            fprintf(options.output, "%.*s", (int32_t)((uint64_t)p - (uint64_t)fmt), fmt);
+            pretty_print_impl(const_cast<son&>(value), options, 0);
+            p = p + 2;
+            fmt = p;
+            continue;
+        }
+
+        p++;
+    }
+
+    fprintf(options.output, "%.*s", (int32_t)((uint64_t)p - (uint64_t)fmt), fmt);
+
+    return 0;
 }
 
 
